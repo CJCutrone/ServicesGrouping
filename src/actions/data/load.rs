@@ -1,7 +1,7 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
-use crate::model::user::User;
+use crate::model::excel::User;
 
-pub fn from_excel(path: &str) -> Result<(), calamine::Error> {
+pub fn from_excel(path: &str) -> Result<Vec<User>, calamine::Error> {
     let mut workbook: Xlsx<_> = open_workbook(path).unwrap();
 
     let range = workbook
@@ -11,10 +11,5 @@ pub fn from_excel(path: &str) -> Result<(), calamine::Error> {
     let iter_records = RangeDeserializerBuilder::with_headers(&["first_name", "last_name", "groups"])
         .from_range(&range)?;
 
-    for result in iter_records {
-        let record: User = result.unwrap();
-        println!("{:?}", record);
-    }
-
-    Ok(())
+    Ok(iter_records.map(|r| r.unwrap()).collect())
 }

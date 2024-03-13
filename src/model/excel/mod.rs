@@ -9,8 +9,8 @@ pub struct User {
 }
 
 fn deserialize_string_as_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: serde::Deserializer<'de>,
+    where
+        D: serde::Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     Ok(s.split(',').map(|s| s.trim().to_string()).collect())
