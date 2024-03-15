@@ -4,11 +4,11 @@ use serde::{Serialize, Deserialize};
 pub struct User {
     pub first_name: String,
     pub last_name: String,
-    #[serde(deserialize_with = "deserialize_string_as_vec")]
+    #[serde(deserialize_with = "deserialize_as_vec")]
     pub groups: Vec<String>,
 }
 
-fn deserialize_string_as_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+fn deserialize_as_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
     where
         D: serde::Deserializer<'de>,
 {

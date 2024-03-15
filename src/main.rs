@@ -10,12 +10,12 @@ pub mod actions;
 pub mod schema;
 
 fn main() {
-    let path = "C:\\Users\\CJ\\Downloads\\test.xlsx";
-    let data = actions::data::load::from_excel(path).unwrap();
+    let path = "C:\\Users\\CJ\\Downloads\\test.json";
+    let data = actions::data::load::from_json(path);
 
     //convert excel User to database User
     let data = data.iter().map(|user|
-        User::from(user)
+        User::from_json(user)
     ).collect();
 
 
