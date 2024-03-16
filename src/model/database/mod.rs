@@ -23,13 +23,20 @@ pub struct Group {
     pub positions: i32
 }
 
+#[derive(Queryable, Selectable, Insertable, Debug)]
+#[diesel(table_name = crate::schema::group_assignments)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct GroupAssignment {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub group_id: Uuid
+}
+
 impl User {
     pub fn from_excel(excel_user: &excel::User) -> User {
         let f_name = excel_user.first_name.clone();
         let l_name = excel_user.last_name.clone();
-
-        //generate a new unique uuid based upon the first and last name
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", f_name, l_name).as_bytes());
+        let id = excel_user.uuid();
 
         User {
             id,
@@ -43,9 +50,7 @@ impl User {
         let f_name = json_user.first_name.clone();
         let l_name = json_user.last_name.clone();
         let planning_center_id = json_user.planning_center_id.clone().unwrap_or_else(|| -1);
-
-        //generate a new unique uuid based upon the first and last name
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", f_name, l_name).as_bytes());
+        let id = json_user.uuid();
 
         User {
             id,
@@ -53,6 +58,18 @@ impl User {
             first_name: f_name,
             last_name: l_name
         }
+    }
+}
+
+impl GroupAssignment {
+    pub fn from_excel(excel_user: &excel::User) -> Vec<GroupAssignment> {
+        let user_id = excel_user.uuid();
+        return excel_user.groups.iter().map(|g| group_assignment(user_id, g)).collect();
+    }
+
+    pub fn from_json(json_user: &json::User) -> Vec<GroupAssignment> {
+        let user_id = json_user.uuid();
+        return json_user.groups.iter().map(|g| group_assignment(user_id, g)).collect();
     }
 }
 
@@ -77,5 +94,14 @@ impl Group {
             name: group.name.clone(),
             positions: group.positions.clone()
         }
+    }
+}
+
+fn group_assignment(user_id: Uuid, group: &String) -> GroupAssignment {
+    let group_id =Uuid::new_v5(&Uuid::NAMESPACE_OID, group.as_bytes());
+    GroupAssignment {
+        id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", user_id, group_id).as_bytes()),
+        user_id,
+        group_id
     }
 }
