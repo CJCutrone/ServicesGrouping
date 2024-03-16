@@ -13,6 +13,16 @@ pub struct User {
     pub last_name: String
 }
 
+#[derive(Queryable, Selectable, Insertable)]
+#[diesel(table_name = crate::schema::groups)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Group {
+    pub id: Uuid,
+    pub planning_center_id: i32,
+    pub name: String,
+    pub required: i8
+}
+
 impl User {
     pub fn from_excel(excel_user: &excel::User) -> User {
         let f_name = excel_user.first_name.clone();
@@ -42,6 +52,30 @@ impl User {
             planning_center_id,
             first_name: f_name,
             last_name: l_name
+        }
+    }
+}
+
+impl Group {
+    pub fn from_excel(group: excel::Group) -> Group {
+        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &group.name.as_bytes());
+
+        Group {
+            id,
+            planning_center_id: -1,
+            name: group.name.clone(),
+            required: group.required.clone()
+        }
+    }
+
+    pub fn from_json(group: json::Group) -> Group {
+        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &group.name.as_bytes());
+
+        Group {
+            id,
+            planning_center_id: group.planning_center_id.clone().unwrap_or_else(|| -1),
+            name: group.name.clone(),
+            required: group.required.clone()
         }
     }
 }

@@ -8,6 +8,12 @@ pub struct User {
     pub groups: Vec<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Group {
+    pub name: String,
+    pub required: i8
+}
+
 fn deserialize_as_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
     where
         D: serde::Deserializer<'de>,
