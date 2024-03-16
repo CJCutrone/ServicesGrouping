@@ -1,5 +1,15 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use crate::model::{excel, json};
+use crate::model::database::User;
+
+pub fn from(path: &str) -> Vec<User> {
+    let extension = path.split('.').last().unwrap();
+    match extension {
+        "xlsx" => from_excel(path).unwrap().iter().map(|item| User::from_excel(item)).collect(),
+        "json" => from_json(path).iter().map(|item| User::from_json(item)).collect(),
+        _ => panic!("Unsupported file type")
+    }
+}
 
 pub fn from_excel(path: &str) -> Result<Vec<excel::User>, calamine::Error> {
     let mut workbook: Xlsx<_> = open_workbook(path).unwrap();

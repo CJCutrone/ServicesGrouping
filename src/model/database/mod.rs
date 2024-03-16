@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::model::{excel, json};
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
@@ -13,7 +13,7 @@ pub struct User {
     pub last_name: String
 }
 
-#[derive(Queryable, Selectable, Insertable)]
+#[derive(Queryable, Selectable, Insertable, Debug)]
 #[diesel(table_name = crate::schema::groups)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Group {
@@ -57,8 +57,8 @@ impl User {
 }
 
 impl Group {
-    pub fn from_excel(group: excel::Group) -> Group {
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &group.name.as_bytes());
+    pub fn from_excel(group: &excel::Group) -> Group {
+        let id = group.uuid();
 
         Group {
             id,
@@ -69,7 +69,7 @@ impl Group {
     }
 
     pub fn from_json(group: &json::Group) -> Group {
-        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &group.name.as_bytes());
+        let id = group.uuid();
 
         Group {
             id,
