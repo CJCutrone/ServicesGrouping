@@ -11,7 +11,7 @@ pub struct User {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Group {
     pub name: String,
-    pub required: i8
+    pub positions: i32
 }
 
 fn deserialize_as_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>

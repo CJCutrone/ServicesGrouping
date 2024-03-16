@@ -20,7 +20,7 @@ pub struct Group {
     pub id: Uuid,
     pub planning_center_id: i32,
     pub name: String,
-    pub required: i8
+    pub positions: i32
 }
 
 impl User {
@@ -64,18 +64,18 @@ impl Group {
             id,
             planning_center_id: -1,
             name: group.name.clone(),
-            required: group.required.clone()
+            positions: group.positions.clone()
         }
     }
 
-    pub fn from_json(group: json::Group) -> Group {
+    pub fn from_json(group: &json::Group) -> Group {
         let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, &group.name.as_bytes());
 
         Group {
             id,
             planning_center_id: group.planning_center_id.clone().unwrap_or_else(|| -1),
             name: group.name.clone(),
-            required: group.required.clone()
+            positions: group.positions.clone()
         }
     }
 }

@@ -12,5 +12,5 @@ pub struct User {
 pub struct Group {
     pub planning_center_id: Option<i32>,
     pub name: String,
-    pub required: i8
+    pub positions: i32
 }
