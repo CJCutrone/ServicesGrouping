@@ -23,9 +23,11 @@ pub struct Group {
     pub positions: i32
 }
 
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Associations, Debug)]
 #[diesel(table_name = crate::schema::group_assignments)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Group))]
 pub struct GroupAssignment {
     pub id: Uuid,
     pub user_id: Uuid,
