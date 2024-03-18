@@ -17,7 +17,7 @@ pub fn from_excel(path: &str) -> Result<Vec<excel::Group>, calamine::Error> {
         .worksheet_range("Groups")
         .map_err(|_| calamine::Error::Msg("Cannot find sheet 'Groups'"))?;
 
-    let iter_records = RangeDeserializerBuilder::with_headers(&["name", "required"])
+    let iter_records = RangeDeserializerBuilder::with_headers(&["name", "positions"])
         .from_range(&range)?;
 
     Ok(iter_records.map(|r| r.unwrap()).collect())
