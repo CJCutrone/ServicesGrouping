@@ -1,4 +1,5 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
+use serde::{Deserialize, Serialize};
 use crate::model::{excel, json};
 
 pub fn from(path: &str) -> Vec<crate::model::database::Group> {
@@ -25,6 +26,12 @@ pub fn from_excel(path: &str) -> Result<Vec<excel::Group>, calamine::Error> {
 
 pub fn from_json(path: &str) -> Vec<json::Group> {
     let content = std::fs::read_to_string(path).unwrap();
-    let groups = serde_json::from_str::<Vec<json::Group>>(&content).expect("JSON was not well formatted");
-    return groups;
+    let data = serde_json::from_str::<JsonData>(&content).expect("JSON was not well formatted");
+    return data.groups;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonData
+{
+    groups: Vec<json::Group>
 }

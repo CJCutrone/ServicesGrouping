@@ -1,4 +1,5 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
+use serde::{Deserialize, Serialize};
 use crate::model::{excel, json};
 use crate::model::database::User;
 
@@ -27,6 +28,12 @@ pub fn from_excel(path: &str) -> Result<Vec<excel::User>, calamine::Error> {
 //same as from_excel, but for json
 pub fn from_json(path: &str) -> Vec<json::User> {
     let content = std::fs::read_to_string(path).unwrap();
-    let users = serde_json::from_str::<Vec<json::User>>(&content).expect("JSON was not well formatted");
-    return users;
+    let data = serde_json::from_str::<JsonData>(&content).expect("JSON was not well formatted");
+    return data.users;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JsonData
+{
+    users: Vec<json::User>
 }
