@@ -1,16 +1,23 @@
 use std::env;
+use clap::Parser;
 
 use diesel::{Connection, PgConnection};
 use dotenv::dotenv;
+use crate::commands::{Arguments, Commands};
+
 pub mod model;
 pub mod actions;
 pub mod schema;
 
-fn main() {
-    let path = "C:\\Users\\CJ\\Downloads\\test.json";
-    let mut connection = establish_connection();
+pub mod commands;
 
-    actions::data::process(path, &mut connection);
+fn main() {
+    let args = Arguments::parse();
+
+    if let Commands::Update { path } = args.command {
+        let mut connection = establish_connection();
+        actions::data::process(&*path, &mut connection);
+    }
 }
 
 pub fn establish_connection() -> PgConnection {
