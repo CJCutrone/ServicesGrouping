@@ -31,7 +31,8 @@ pub struct Group {
 pub struct GroupAssignment {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub group_id: Uuid
+    pub group_id: Uuid,
+    pub tickets: i32
 }
 
 impl User {
@@ -104,6 +105,7 @@ fn group_assignment(user_id: Uuid, group: &String) -> GroupAssignment {
     GroupAssignment {
         id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", user_id, group_id).as_bytes()),
         user_id,
-        group_id
+        group_id,
+        tickets: 0
     }
 }
