@@ -1,9 +1,10 @@
 use diesel::prelude::*;
+use serde::Serialize;
 use uuid::Uuid;
 
 use crate::model::{excel, json};
 
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Serialize, Debug)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
@@ -13,7 +14,7 @@ pub struct User {
     pub last_name: String
 }
 
-#[derive(Queryable, Selectable, Insertable, Debug)]
+#[derive(Queryable, Selectable, Insertable, Serialize, Clone, Debug)]
 #[diesel(table_name = crate::schema::groups)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Group {
@@ -23,7 +24,7 @@ pub struct Group {
     pub positions: i32
 }
 
-#[derive(Queryable, Selectable, Insertable, Associations, Debug)]
+#[derive(Queryable, Selectable, Insertable, Associations, Serialize, Debug)]
 #[diesel(table_name = crate::schema::group_assignments)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(User))]
