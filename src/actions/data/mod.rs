@@ -4,6 +4,7 @@ use dotenv::dotenv;
 
 pub mod load;
 pub mod save;
+pub mod ticketing;
 
 pub fn process(file: &str, connection: &mut PgConnection) {
     let users = load::user::from(file);
