@@ -5,6 +5,7 @@ diesel::table! {
         id -> Uuid,
         user_id -> Uuid,
         group_id -> Uuid,
+        tickets -> Int4,
     }
 }
 
