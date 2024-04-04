@@ -20,4 +20,15 @@ pub enum Commands
         ///path to the file to load
         path: String
     },
+    ///generate group assignments
+    Assign {
+        ///group id to generate assignments for
+        group_id: String,
+        ///start date to generate assignments for
+        start_date: String,
+        ///end date to generate assignments for
+        end_date: String,
+        ///cron expression to generate assignments for
+        cron: String
+    }
 }
