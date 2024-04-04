@@ -1,3 +1,4 @@
+use chrono::{NaiveDateTime};
 use diesel::prelude::*;
 use serde::Serialize;
 use uuid::Uuid;
@@ -34,6 +35,17 @@ pub struct GroupAssignment {
     pub user_id: Uuid,
     pub group_id: Uuid,
     pub tickets: i32
+}
+
+#[derive(Queryable, Selectable, Insertable, Associations, Serialize, Debug)]
+#[diesel(table_name = crate::schema::service_dates)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(GroupAssignment))]
+pub struct ServiceDate {
+    pub id: Uuid,
+    pub group_assignment_id: Uuid,
+    pub tickets_consumed: i32,
+    pub for_date: NaiveDateTime,
 }
 
 impl User {
