@@ -1,24 +1,40 @@
 use std::env;
-use diesel::{Connection, PgConnection};
+
+use diesel::PgConnection;
+use diesel::r2d2::{ConnectionManager, Pool, PoolError};
 use dotenv::dotenv;
+use log::trace;
 
 pub mod load;
 pub mod save;
 pub mod ticketing;
 
-pub fn process(file: &str, connection: &mut PgConnection) {
+pub fn process(file: &str, pool: Pool<ConnectionManager<PgConnection>>) {
     let users = load::user::from(file);
     let groups = load::group::from(file);
     let group_assignments = load::group_assignment::from(file);
 
-    save::user::to_database(connection, &users);
-    save::group::to_database(connection, &groups);
-    save::group_assignment::to_database(connection, &group_assignments);
+    trace!("Saving user to database");
+    save::user::to_database(pool.clone(), &users);
+    trace!("Saving groups to database");
+    save::group::to_database(pool.clone(), &groups);
+    trace!("Saving group_assignments to database");
+    save::group_assignment::to_database(pool.clone(), &group_assignments);
 }
 
-pub fn get_db_connection() -> PgConnection {
+pub fn get_db_connection() -> Result<Pool<ConnectionManager<PgConnection>>, PoolError> {
     dotenv().ok();
 
+    trace!("Pulling in .env vars");
     let url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    return PgConnection::establish(&url).expect(&format!("Error connecting to {}", url))
+    trace!("URL for database found");
+    let manager = ConnectionManager::<PgConnection>::new(url);
+    trace!("ConnectionManager established");
+    let pool = Pool::builder()
+        .max_size(1)
+        .test_on_check_out(true)
+        .build(manager);
+    trace!("Pool established");
+
+    return pool;
 }

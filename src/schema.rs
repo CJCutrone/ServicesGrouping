@@ -20,6 +20,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    service_dates (id) {
+        id -> Uuid,
+        group_assignment_id -> Uuid,
+        tickets_consumed -> Int4,
+        for_date -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Uuid,
         planning_center_id -> Int4,
@@ -32,9 +41,11 @@ diesel::table! {
 
 diesel::joinable!(group_assignments -> groups (group_id));
 diesel::joinable!(group_assignments -> users (user_id));
+diesel::joinable!(service_dates -> group_assignments (group_assignment_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     group_assignments,
     groups,
+    service_dates,
     users,
 );

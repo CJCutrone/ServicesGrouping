@@ -5,9 +5,11 @@ edition = "2021"
 
 [dependencies]
 calamine = {version = "0.24.0" }
+chrono = { version = "0.4.37", features = ["serde"] }
 clap = { version = "4.5.3", features = ["derive"] }
 clap_derive = "4.5.3"
-diesel = { version = "2.1.4", features = ["uuid", "postgres"] }
+cron = "0.12.1"
+diesel = { version = "2.1.4", features = ["uuid", "postgres", "chrono", "r2d2"] }
 dotenv = "0.15.0"
 log = "0.4.21"
 pretty_env_logger = "0.5.0"
