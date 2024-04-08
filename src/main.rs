@@ -34,10 +34,10 @@ async fn main() -> std::io::Result<()> {
     let pool = pool.unwrap();
     info!("Connection pool established");
 
-    return match args.command {
+    match args.command {
         Commands::Api => {
             info!("API command received");
-            HttpServer::new(move ||
+            return HttpServer::new(move ||
                 App::new()
                     .wrap(
                         //TODO: once initial development is done, widdle down what is allowed
@@ -57,39 +57,38 @@ async fn main() -> std::io::Result<()> {
                             .build()
                     )
                     .app_data(Data::new(pool.clone()))
-            )
+                )
                 .bind("0.0.0.0:8080")?
                 .run()
                 .await
         }
         Commands::Update { path } => {
             info!("Update command received");
-            actions::data::process(&*path, pool);
-            Ok(())
+            actions::data::process(&path, pool);
         }
         Commands::Assign { group_id, start_date, end_date, cron } => {
             info!("Assign command received");
             let group_id = Uuid::parse_str(&group_id).unwrap();
             let start_date = NaiveDateTime::parse_from_str(&start_date, "%Y-%m-%d %H:%M").unwrap();
             let end_date = NaiveDateTime::parse_from_str(&end_date, "%Y-%m-%d %H:%M").unwrap();
-            let cron = cron.split(";").collect::<Vec<&str>>();
+            let cron = cron.split(';').collect::<Vec<&str>>();
             trace!("Arguments parsed successfully");
             let mut dates: Vec<NaiveDateTime> = cron
                 .iter()
-                .map(|c|
-                    generate_dates(start_date.and_utc(), end_date.and_utc(), c).unwrap_or_else(|| Vec::new())
+                .flat_map(|c|
+                    generate_dates(start_date.and_utc(), end_date.and_utc(), c).unwrap_or_default()
                 )
-                .flatten()
                 .collect()
                 ;
 
-            dates.sort_by(|a, b| a.cmp(b));
+            dates.sort();
 
             trace!("Dates generated");
             let _ = actions::data::ticketing::generate_assignments_for_dates(group_id, dates, pool);
-            Ok(())
         }
     }
+
+    Ok(())
 }
 
 fn generate_dates(
@@ -107,5 +106,5 @@ fn generate_dates(
         current_date = next_date.next()?;
     }
 
-    return Some(dates);
+    Some(dates)
 }

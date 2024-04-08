@@ -36,5 +36,5 @@ pub fn get_db_connection() -> Result<Pool<ConnectionManager<PgConnection>>, Pool
         .build(manager);
     trace!("Pool established");
 
-    return pool;
+    pool
 }

@@ -26,9 +26,9 @@ pub fn generate_assignments_for_dates(
     for date in dates.iter()
     {
         let assignments_for_date: Vec<ServiceDate> = assignments.iter().map(|a| ServiceDate {
-            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", a.group_assignment_id, date.clone()).as_bytes()),
+            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", a.group_assignment_id, *date).as_bytes()),
             group_assignment_id: a.group_assignment_id,
-            for_date: date.clone(),
+            for_date: *date,
             tickets_consumed: a.tickets_consumed
         }).collect();
 
@@ -47,7 +47,7 @@ pub fn generate_assignments_for_dates(
     }
 
     trace!("Completed assignment");
-    return Ok(assignments);
+    Ok(assignments)
 }
 
 pub fn generate_assignments(for_group_id: Uuid, pool: Pool<ConnectionManager<PgConnection>>) -> Result<Vec<Assignment>, &'static str>
@@ -55,18 +55,18 @@ pub fn generate_assignments(for_group_id: Uuid, pool: Pool<ConnectionManager<PgC
     let mut connection = pool.get().expect("Error getting connection");
     let result = generate_assignments_for_group(for_group_id, &mut connection);
 
-    return match result
+    match result
     {
         GenerateGroupAssignmentResult::Success(assignments) => Ok(assignments),
         GenerateGroupAssignmentResult::NotEnoughUsers => {
             error!("Not enough users to generate assignments for group");
-            return Err("Not enough users to generate assignments for group");
+            Err("Not enough users to generate assignments for group")
         },
         GenerateGroupAssignmentResult::UnknownDatabaseError(e) => {
             error!("{:?}", e);
-            return Err("Unknown database error has occurred");
+            Err("Unknown database error has occurred")
         }
-    };
+    }
 }
 
 fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) -> GenerateGroupAssignmentResult
@@ -107,7 +107,7 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
             available_tickets.push(Assignment {
                 group_assignment_id: assignment.id,
                 user_id: assignment.user_id,
-                tickets_consumed: tickets_per_user.get(&assignment.user_id).unwrap().clone()
+                tickets_consumed: *tickets_per_user.get(&assignment.user_id).unwrap()
             });
         }
     }
@@ -147,7 +147,7 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
         return GenerateGroupAssignmentResult::UnknownDatabaseError(e);
     }
 
-    return GenerateGroupAssignmentResult::Success(assignments);
+    GenerateGroupAssignmentResult::Success(assignments)
 }
 
 

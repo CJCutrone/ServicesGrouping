@@ -17,13 +17,13 @@ pub struct Group {
 
 impl User {
     pub fn uuid(&self) -> Uuid {
-        Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", self.first_name, self.last_name).as_bytes())
+        Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", self.first_name, self.last_name).as_bytes())
     }
 }
 
 impl Group {
     pub fn uuid(&self) -> Uuid {
-        Uuid::new_v5(&Uuid::NAMESPACE_OID, &self.name.as_bytes())
+        Uuid::new_v5(&Uuid::NAMESPACE_OID, self.name.as_bytes())
     }
 }
 

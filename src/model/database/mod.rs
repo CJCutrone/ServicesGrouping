@@ -65,7 +65,7 @@ impl User {
     pub fn from_json(json_user: &json::User) -> User {
         let f_name = json_user.first_name.clone();
         let l_name = json_user.last_name.clone();
-        let planning_center_id = json_user.planning_center_id.clone().unwrap_or_else(|| -1);
+        let planning_center_id = json_user.planning_center_id.unwrap_or(-1);
         let id = json_user.uuid();
 
         User {
@@ -97,7 +97,7 @@ impl Group {
             id,
             planning_center_id: -1,
             name: group.name.clone(),
-            positions: group.positions.clone()
+            positions: group.positions
         }
     }
 
@@ -106,9 +106,9 @@ impl Group {
 
         Group {
             id,
-            planning_center_id: group.planning_center_id.clone().unwrap_or_else(|| -1),
+            planning_center_id: group.planning_center_id.unwrap_or(-1),
             name: group.name.clone(),
-            positions: group.positions.clone()
+            positions: group.positions
         }
     }
 }
@@ -116,7 +116,7 @@ impl Group {
 fn group_assignment(user_id: Uuid, group: &String) -> GroupAssignment {
     let group_id =Uuid::new_v5(&Uuid::NAMESPACE_OID, group.as_bytes());
     GroupAssignment {
-        id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", user_id, group_id).as_bytes()),
+        id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", user_id, group_id).as_bytes()),
         user_id,
         group_id,
         tickets: 0
