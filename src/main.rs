@@ -16,6 +16,7 @@ use uuid::Uuid;
 use crate::actions::data::get_db_connection;
 use crate::commands::{Arguments, Commands};
 
+pub mod api;
 pub mod model;
 pub mod actions;
 pub mod schema;
@@ -56,6 +57,7 @@ async fn main() -> std::io::Result<()> {
                             )
                             .build()
                     )
+                    .service(api::endpoints::generate_assignments)
                     .app_data(Data::new(pool.clone()))
                 )
                 .bind("0.0.0.0:8080")?
