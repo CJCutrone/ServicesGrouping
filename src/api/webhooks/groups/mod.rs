@@ -1,5 +1,6 @@
 use actix_web::{post, web::{self, Data}, HttpResponse, Responder};
 use diesel::{r2d2::{ConnectionManager, Pool}, PgConnection};
+use log::error;
 use uuid::Uuid;
 
 use crate::{actions, api::webhooks::{groups::events::Group, WebhookRequest}, model::database};
@@ -22,9 +23,15 @@ async fn group_created_webhook(
         planning_center_id: created.data.id
     };
 
-    actions::data::save::group::to_database(pool.get_ref().clone(), &vec![group]);
+    let result = actions::data::save::group::to_database(pool.get_ref().clone(), &vec![group]);
 
-    HttpResponse::Ok()
+    match result {
+        Ok(_) => HttpResponse::Ok(),
+        Err(e) => {
+            error!("{}", e);
+            HttpResponse::InternalServerError()
+        }
+    }
 }
 
 #[post("/api/hooks/group/updated")]
