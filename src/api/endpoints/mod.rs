@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{actions, api::requests::GenerateAssignmentRequests};
 
 
-#[post("/groups/{id}/assign")]
+#[post("/api/groups/{id}/assign")]
 async fn generate_assignments(
     path: web::Path<Uuid>,
     request: web::Json<GenerateAssignmentRequests>,
