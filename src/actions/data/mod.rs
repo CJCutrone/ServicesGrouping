@@ -5,6 +5,7 @@ use diesel::r2d2::{ConnectionManager, Pool, PoolError};
 use dotenv::dotenv;
 use log::trace;
 
+pub mod get;
 pub mod load;
 pub mod save;
 pub mod ticketing;
