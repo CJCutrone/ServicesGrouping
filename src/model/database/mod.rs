@@ -22,7 +22,8 @@ pub struct Group {
     pub id: Uuid,
     pub planning_center_id: String,
     pub name: String,
-    pub positions: i32
+    pub positions: i32,
+    pub is_deleted: bool
 }
 
 #[derive(Queryable, Selectable, Insertable, Associations, Serialize, Debug)]
@@ -97,7 +98,8 @@ impl Group {
             id,
             planning_center_id: "-1".to_string(),
             name: group.name.clone(),
-            positions: group.positions
+            positions: group.positions,
+            is_deleted: false
         }
     }
 
@@ -108,7 +110,8 @@ impl Group {
             id,
             planning_center_id: group.planning_center_id.unwrap_or(-1).to_string(),
             name: group.name.clone(),
-            positions: group.positions
+            positions: group.positions,
+            is_deleted: false
         }
     }
 }

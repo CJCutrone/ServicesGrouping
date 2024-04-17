@@ -22,11 +22,20 @@ pub fn by_planning_center_id(
 
     let group = result.unwrap();
 
-    match group.len() {
-        0 => GetGroupResult::NotFound,
-        1 => GetGroupResult::Success(group[0].clone()),
-        _ => GetGroupResult::MoreThanOneFound
+    if group.is_empty() {
+        return GetGroupResult::NotFound;
     }
+
+    if group.len() > 1 {
+        return GetGroupResult::MoreThanOneFound;
+    }
+
+    let group = &group[0];
+    if group.is_deleted { 
+        return GetGroupResult::GroupDeleted 
+    }
+    
+    GetGroupResult::Success(group.clone())
 }
 
 pub enum GetGroupResult
@@ -34,5 +43,6 @@ pub enum GetGroupResult
     Success(Group),
     NotFound,
     MoreThanOneFound,
+    GroupDeleted,
     UnknownDatabaseError(Error)
 }

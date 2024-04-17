@@ -17,6 +17,7 @@ diesel::table! {
         #[max_length = 255]
         name -> Varchar,
         positions -> Int4,
+        is_deleted -> Bool,
     }
 }
 

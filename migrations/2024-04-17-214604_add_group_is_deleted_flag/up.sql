@@ -1,0 +1,2 @@
+ALTER TABLE "groups"
+    ADD COLUMN "is_deleted" BOOLEAN NOT NULL DEFAULT FALSE;

@@ -20,7 +20,8 @@ async fn group_created_webhook(
         id: Uuid::new_v5(&Uuid::NAMESPACE_OID, name.as_bytes()),
         name,
         positions: 0,
-        planning_center_id: created.data.id
+        planning_center_id: created.data.id,
+        is_deleted: false
     };
 
     let result = actions::data::save::group::to_database(pool.get_ref().clone(), &vec![group]);
@@ -53,6 +54,10 @@ async fn group_updated_webhook(
             error!("More than one group found with planning center id: {}", updated.data.id);
             Err(())
         },
+        GetGroupResult::GroupDeleted => {
+            warn!("Group with planning center id: {} is deleted", updated.data.id);
+            Err(())
+        },
         GetGroupResult::NotFound => {
             warn!("No group found with planning center id: {}", updated.data.id);
             
@@ -61,7 +66,8 @@ async fn group_updated_webhook(
                 id: Uuid::new_v5(&Uuid::NAMESPACE_OID, name.as_bytes()),
                 name,
                 positions: 0,
-                planning_center_id: updated.data.id
+                planning_center_id: updated.data.id,
+                is_deleted: false
             })
         },
         GetGroupResult::Success(mut group) => {
