@@ -92,12 +92,45 @@ async fn group_updated_webhook(
 #[post("/api/hooks/group/deleted")]
 async fn group_deleted_webhook(
     payload: web::Json<WebhookRequest<String>>,
-    _: Data<Pool<ConnectionManager<PgConnection>>>
+    pool: Data<Pool<ConnectionManager<PgConnection>>>
 ) -> impl Responder {
     let payload = payload.into_inner();
-    let group = Group::from(payload);
-    
-    println!("{:?}", group);
+    let deleted = Group::from(payload);
 
-    HttpResponse::Ok()
+    let get_group_result = actions::data::get::group::by_planning_center_id(pool.get_ref().clone(), &deleted.data.id);
+
+    let group = match get_group_result {
+        GetGroupResult::UnknownDatabaseError(e) => {
+            error!("{}", e);
+            Err(())
+        },
+        GetGroupResult::MoreThanOneFound => {    
+            error!("More than one group found with planning center id: {}", deleted.data.id);
+            Err(())
+        },
+        GetGroupResult::GroupDeleted => {
+            error!("Group with planning center id: {} is already deleted", deleted.data.id);
+            Err(())
+        },
+        GetGroupResult::NotFound => {
+            error!("No group found with planning center id: {}", deleted.data.id);
+            Err(())
+        },
+        GetGroupResult::Success(mut group) => {
+            group.is_deleted = true;
+            Ok(group)
+        }
+    };
+
+    if group.is_err() {
+        return HttpResponse::InternalServerError();
+    }
+
+    match actions::data::save::group::to_database(pool.get_ref().clone(), &vec![group.unwrap()]) {
+        Ok(_) => HttpResponse::Ok(),
+        Err(e) => {
+            error!("{}", e);
+            HttpResponse::InternalServerError()
+        }
+    }
 }
