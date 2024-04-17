@@ -41,42 +41,40 @@ async fn group_updated_webhook(
 ) -> impl Responder {
     let payload = payload.into_inner();
     let updated = Group::from(payload);
-    let pool = pool.get_ref();
 
-    let result = actions::data::get::group::by_planning_center_id(
-        pool.clone(), 
-        &updated.data.id
-    );
+    let get_group_result = actions::data::get::group::by_planning_center_id(pool.get_ref().clone(), &updated.data.id);
 
-    let group = match result {
+    let group = match get_group_result {
         GetGroupResult::UnknownDatabaseError(e) => {
             error!("{}", e);
-            return HttpResponse::InternalServerError();
+            Err(())
         },
         GetGroupResult::MoreThanOneFound => {    
             error!("More than one group found with planning center id: {}", updated.data.id);
-            return HttpResponse::InternalServerError();
+            Err(())
         },
         GetGroupResult::NotFound => {
             warn!("No group found with planning center id: {}", updated.data.id);
             
             let name = updated.data.attributes.unwrap().name;
-            database::Group {
+            Ok(database::Group {
                 id: Uuid::new_v5(&Uuid::NAMESPACE_OID, name.as_bytes()),
                 name,
                 positions: 0,
                 planning_center_id: updated.data.id
-            }
+            })
         },
         GetGroupResult::Success(mut group) => {
             group.name = updated.data.attributes.unwrap().name;
-            group
+            Ok(group)
         }
     };
 
-    let result = actions::data::save::group::to_database(pool.clone(), &vec![group]);
+    if group.is_err() {
+        return HttpResponse::InternalServerError();
+    }
 
-    match result {
+    match actions::data::save::group::to_database(pool.get_ref().clone(), &vec![group.unwrap()]) {
         Ok(_) => HttpResponse::Ok(),
         Err(e) => {
             error!("{}", e);
