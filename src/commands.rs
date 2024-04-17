@@ -15,6 +15,7 @@ pub struct Arguments
 #[derive(Subcommand)]
 pub enum Commands
 {
+    Api,
     ///load data from file and insert its contents into the database
     Update {
         ///path to the file to load

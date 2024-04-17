@@ -1,12 +1,12 @@
 use calamine::{open_workbook, RangeDeserializerBuilder, Reader, Xlsx};
 use serde::{Deserialize, Serialize};
-use crate::model::{excel, json};
+use crate::model::{database::Group, excel, json};
 
 pub fn from(path: &str) -> Vec<crate::model::database::Group> {
     let extension = path.split('.').last().unwrap();
     match extension {
-        "xlsx" => from_excel(path).unwrap().iter().map(|item| crate::model::database::Group::from_excel(item)).collect(),
-        "json" => from_json(path).iter().map(|item| crate::model::database::Group::from_json(item)).collect(),
+        "xlsx" => from_excel(path).unwrap().iter().map(Group::from_excel).collect(),
+        "json" => from_json(path).iter().map(Group::from_json).collect(),
         _ => panic!("Unsupported file type")
     }
 }
@@ -27,7 +27,7 @@ pub fn from_excel(path: &str) -> Result<Vec<excel::Group>, calamine::Error> {
 pub fn from_json(path: &str) -> Vec<json::Group> {
     let content = std::fs::read_to_string(path).unwrap();
     let data = serde_json::from_str::<JsonData>(&content).expect("JSON was not well formatted");
-    return data.groups;
+    data.groups
 }
 
 #[derive(Debug, Serialize, Deserialize)]

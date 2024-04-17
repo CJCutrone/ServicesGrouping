@@ -6,8 +6,8 @@ use crate::model::database::User;
 pub fn from(path: &str) -> Vec<User> {
     let extension = path.split('.').last().unwrap();
     match extension {
-        "xlsx" => from_excel(path).unwrap().iter().map(|item| User::from_excel(item)).collect(),
-        "json" => from_json(path).iter().map(|item| User::from_json(item)).collect(),
+        "xlsx" => from_excel(path).unwrap().iter().map(User::from_excel).collect(),
+        "json" => from_json(path).iter().map(User::from_json).collect(),
         _ => panic!("Unsupported file type")
     }
 }
@@ -29,7 +29,7 @@ pub fn from_excel(path: &str) -> Result<Vec<excel::User>, calamine::Error> {
 pub fn from_json(path: &str) -> Vec<json::User> {
     let content = std::fs::read_to_string(path).unwrap();
     let data = serde_json::from_str::<JsonData>(&content).expect("JSON was not well formatted");
-    return data.users;
+    data.users
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -5,6 +5,7 @@ use diesel::r2d2::{ConnectionManager, Pool, PoolError};
 use dotenv::dotenv;
 use log::trace;
 
+pub mod get;
 pub mod load;
 pub mod save;
 pub mod ticketing;
@@ -17,7 +18,7 @@ pub fn process(file: &str, pool: Pool<ConnectionManager<PgConnection>>) {
     trace!("Saving user to database");
     save::user::to_database(pool.clone(), &users);
     trace!("Saving groups to database");
-    save::group::to_database(pool.clone(), &groups);
+    save::group::to_database(pool.clone(), &groups).expect("Unable to insert groups into database");
     trace!("Saving group_assignments to database");
     save::group_assignment::to_database(pool.clone(), &group_assignments);
 }
@@ -36,5 +37,5 @@ pub fn get_db_connection() -> Result<Pool<ConnectionManager<PgConnection>>, Pool
         .build(manager);
     trace!("Pool established");
 
-    return pool;
+    pool
 }

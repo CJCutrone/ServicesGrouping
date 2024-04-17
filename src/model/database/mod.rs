@@ -10,7 +10,7 @@ use crate::model::{excel, json};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
     pub id: Uuid,
-    pub planning_center_id: i32,
+    pub planning_center_id: String,
     pub first_name: String,
     pub last_name: String
 }
@@ -20,9 +20,10 @@ pub struct User {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Group {
     pub id: Uuid,
-    pub planning_center_id: i32,
+    pub planning_center_id: String,
     pub name: String,
-    pub positions: i32
+    pub positions: i32,
+    pub is_deleted: bool
 }
 
 #[derive(Queryable, Selectable, Insertable, Associations, Serialize, Debug)]
@@ -56,7 +57,7 @@ impl User {
 
         User {
             id,
-            planning_center_id: -1,
+            planning_center_id: "-1".to_string(),
             first_name: f_name,
             last_name: l_name
         }
@@ -65,7 +66,7 @@ impl User {
     pub fn from_json(json_user: &json::User) -> User {
         let f_name = json_user.first_name.clone();
         let l_name = json_user.last_name.clone();
-        let planning_center_id = json_user.planning_center_id.clone().unwrap_or_else(|| -1);
+        let planning_center_id = json_user.planning_center_id.unwrap_or(-1).to_string();
         let id = json_user.uuid();
 
         User {
@@ -95,9 +96,10 @@ impl Group {
 
         Group {
             id,
-            planning_center_id: -1,
+            planning_center_id: "-1".to_string(),
             name: group.name.clone(),
-            positions: group.positions.clone()
+            positions: group.positions,
+            is_deleted: false
         }
     }
 
@@ -106,9 +108,10 @@ impl Group {
 
         Group {
             id,
-            planning_center_id: group.planning_center_id.clone().unwrap_or_else(|| -1),
+            planning_center_id: group.planning_center_id.unwrap_or(-1).to_string(),
             name: group.name.clone(),
-            positions: group.positions.clone()
+            positions: group.positions,
+            is_deleted: false
         }
     }
 }
@@ -116,7 +119,7 @@ impl Group {
 fn group_assignment(user_id: Uuid, group: &String) -> GroupAssignment {
     let group_id =Uuid::new_v5(&Uuid::NAMESPACE_OID, group.as_bytes());
     GroupAssignment {
-        id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", user_id, group_id).as_bytes()),
+        id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", user_id, group_id).as_bytes()),
         user_id,
         group_id,
         tickets: 0

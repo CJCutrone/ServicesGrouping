@@ -1,13 +1,15 @@
 use std::collections::HashMap;
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
 use diesel::insert_into;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use log::{error, trace};
-use rand::prelude::SliceRandom;
+use rand::Rng;
 use serde::Serialize;
 use uuid::Uuid;
 use crate::model::database::{Group, GroupAssignment, ServiceDate};
+use crate::model::json;
+use crate::model::json::Assignment;
 use crate::schema::{group_assignments, service_dates};
 use crate::schema::group_assignments::{group_id, tickets};
 use crate::schema::groups::dsl::groups;
@@ -26,9 +28,9 @@ pub fn generate_assignments_for_dates(
     for date in dates.iter()
     {
         let assignments_for_date: Vec<ServiceDate> = assignments.iter().map(|a| ServiceDate {
-            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, &format!("{}{}", a.group_assignment_id, date.clone()).as_bytes()),
-            group_assignment_id: a.group_assignment_id,
-            for_date: date.clone(),
+            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", a.group_assignment.id, *date).as_bytes()),
+            group_assignment_id: a.group_assignment.id,
+            for_date: *date,
             tickets_consumed: a.tickets_consumed
         }).collect();
 
@@ -47,7 +49,7 @@ pub fn generate_assignments_for_dates(
     }
 
     trace!("Completed assignment");
-    return Ok(assignments);
+    Ok(assignments)
 }
 
 pub fn generate_assignments(for_group_id: Uuid, pool: Pool<ConnectionManager<PgConnection>>) -> Result<Vec<Assignment>, &'static str>
@@ -55,18 +57,18 @@ pub fn generate_assignments(for_group_id: Uuid, pool: Pool<ConnectionManager<PgC
     let mut connection = pool.get().expect("Error getting connection");
     let result = generate_assignments_for_group(for_group_id, &mut connection);
 
-    return match result
+    match result
     {
         GenerateGroupAssignmentResult::Success(assignments) => Ok(assignments),
         GenerateGroupAssignmentResult::NotEnoughUsers => {
             error!("Not enough users to generate assignments for group");
-            return Err("Not enough users to generate assignments for group");
+            Err("Not enough users to generate assignments for group")
         },
         GenerateGroupAssignmentResult::UnknownDatabaseError(e) => {
             error!("{:?}", e);
-            return Err("Unknown database error has occurred");
+            Err("Unknown database error has occurred")
         }
-    };
+    }
 }
 
 fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) -> GenerateGroupAssignmentResult
@@ -104,24 +106,32 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
     {
         for _ in 0..assignment.tickets
         {
+            let group_assignment = json::GroupAssignment {
+                id: assignment.id,
+                group_id: assignment.group_id,
+                user_id: assignment.user_id
+            };
             available_tickets.push(Assignment {
-                group_assignment_id: assignment.id,
-                user_id: assignment.user_id,
-                tickets_consumed: tickets_per_user.get(&assignment.user_id).unwrap().clone()
+                group_assignment,
+                tickets_consumed: *tickets_per_user.get(&assignment.user_id).unwrap()
             });
         }
     }
 
     trace!("Selecting tickets");
-    let mut assignments = Vec::new();
+    let mut assignments: Vec<Assignment> = Vec::new();
     for _ in 0..positions
     {
-        let assignment = available_tickets.choose(&mut rng).unwrap().clone();
-        assignments.push(assignment.clone());
-        available_tickets.retain(|u| u.user_id != assignment.user_id);
+        let index = rng.gen_range(0..available_tickets.len());
+        let assignment = available_tickets[index];        
+        assignments.push(assignment);
+
+        available_tickets.retain(
+            |u| u.group_assignment.user_id != assignment.group_assignment.user_id
+        );
     }
 
-    let assigned_users = assignments.iter().map(|a| a.user_id).collect::<Vec<Uuid>>();
+    let assigned_users = assignments.iter().map(|a| a.group_assignment.user_id).collect::<Vec<Uuid>>();
 
     trace!("Zeroing out tickets for assigned users");
     let result = diesel::update(group_assignments::table)
@@ -147,16 +157,7 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
         return GenerateGroupAssignmentResult::UnknownDatabaseError(e);
     }
 
-    return GenerateGroupAssignmentResult::Success(assignments);
-}
-
-
-#[derive(Debug, Clone)]
-pub struct Assignment
-{
-    group_assignment_id: Uuid,
-    user_id: Uuid,
-    tickets_consumed: i32
+    GenerateGroupAssignmentResult::Success(assignments)
 }
 
 enum GenerateGroupAssignmentResult

@@ -12,10 +12,12 @@ diesel::table! {
 diesel::table! {
     groups (id) {
         id -> Uuid,
-        planning_center_id -> Int4,
+        #[max_length = 255]
+        planning_center_id -> Varchar,
         #[max_length = 255]
         name -> Varchar,
         positions -> Int4,
+        is_deleted -> Bool,
     }
 }
 
@@ -31,7 +33,8 @@ diesel::table! {
 diesel::table! {
     users (id) {
         id -> Uuid,
-        planning_center_id -> Int4,
+        #[max_length = 255]
+        planning_center_id -> Varchar,
         #[max_length = 255]
         first_name -> Varchar,
         #[max_length = 255]
