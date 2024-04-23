@@ -39,6 +39,7 @@ diesel::table! {
         first_name -> Varchar,
         #[max_length = 255]
         last_name -> Varchar,
+        is_deleted -> Bool,
     }
 }
 
