@@ -12,18 +12,22 @@ use clap::Parser;
 use cron::Schedule;
 use log::{error, info, trace};
 use uuid::Uuid;
+use dotenv::dotenv;
 
 use crate::actions::data::get_db_connection;
 use crate::commands::{Arguments, Commands};
 
-pub mod api;
-pub mod model;
 pub mod actions;
-pub mod schema;
+pub mod api;
 pub mod commands;
+pub mod model;
+pub mod oauth;
+pub mod schema;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    
+    dotenv().ok();
     pretty_env_logger::init();
     let args = Arguments::parse();
 
@@ -62,6 +66,8 @@ async fn main() -> std::io::Result<()> {
                     .service(api::webhooks::groups::group_updated_webhook)
                     .service(api::webhooks::groups::group_deleted_webhook)
                     .service(api::webhooks::groups::membership::membership_created_webhook)
+                    .service(oauth::endpoints::callback)
+                    .service(oauth::endpoints::me)
                     .app_data(Data::new(pool.clone()))
                 )
                 .bind("0.0.0.0:8080")?

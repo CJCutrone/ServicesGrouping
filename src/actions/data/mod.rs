@@ -2,7 +2,6 @@ use std::env;
 
 use diesel::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PoolError};
-use dotenv::dotenv;
 use log::trace;
 
 pub mod get;
@@ -31,8 +30,6 @@ pub fn process(file: &str, pool: Pool<ConnectionManager<PgConnection>>) {
 }
 
 pub fn get_db_connection() -> Result<Pool<ConnectionManager<PgConnection>>, PoolError> {
-    dotenv().ok();
-
     trace!("Pulling in .env vars");
     let url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     trace!("URL for database found");
