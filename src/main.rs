@@ -61,6 +61,7 @@ async fn main() -> std::io::Result<()> {
                     .service(api::webhooks::groups::group_created_webhook)
                     .service(api::webhooks::groups::group_updated_webhook)
                     .service(api::webhooks::groups::group_deleted_webhook)
+                    .service(api::webhooks::groups::membership::membership_created_webhook)
                     .app_data(Data::new(pool.clone()))
                 )
                 .bind("0.0.0.0:8080")?
