@@ -1,18 +1,19 @@
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::Serialize;
 use uuid::Uuid;
 
 use crate::model::{excel, json};
 
-#[derive(Queryable, Selectable, Insertable, Serialize, Debug)]
+#[derive(Queryable, Selectable, Insertable, Serialize, Clone, Debug)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
     pub id: Uuid,
     pub planning_center_id: String,
     pub first_name: String,
-    pub last_name: String
+    pub last_name: String,
+    pub is_deleted: bool
 }
 
 #[derive(Queryable, Selectable, Insertable, Serialize, Clone, Debug)]
@@ -59,7 +60,8 @@ impl User {
             id,
             planning_center_id: "-1".to_string(),
             first_name: f_name,
-            last_name: l_name
+            last_name: l_name,
+            is_deleted: false
         }
     }
 
@@ -73,7 +75,8 @@ impl User {
             id,
             planning_center_id,
             first_name: f_name,
-            last_name: l_name
+            last_name: l_name,
+            is_deleted: false
         }
     }
 }
