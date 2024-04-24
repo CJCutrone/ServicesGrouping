@@ -8,8 +8,6 @@ use rand::Rng;
 use serde::Serialize;
 use uuid::Uuid;
 use crate::model::database::{Group, GroupAssignment, ServiceDate};
-use crate::model::json;
-use crate::model::json::Assignment;
 use crate::schema::{group_assignments, service_dates};
 use crate::schema::group_assignments::{group_id, tickets};
 use crate::schema::groups::dsl::groups;
@@ -28,8 +26,8 @@ pub fn generate_assignments_for_dates(
     for date in dates.iter()
     {
         let assignments_for_date: Vec<ServiceDate> = assignments.iter().map(|a| ServiceDate {
-            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", a.group_assignment.id, *date).as_bytes()),
-            group_assignment_id: a.group_assignment.id,
+            id: Uuid::new_v5(&Uuid::NAMESPACE_OID, format!("{}{}", a.group_assignment_id, *date).as_bytes()),
+            group_assignment_id: a.group_assignment_id,
             for_date: *date,
             tickets_consumed: a.tickets_consumed
         }).collect();
@@ -106,13 +104,10 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
     {
         for _ in 0..assignment.tickets
         {
-            let group_assignment = json::GroupAssignment {
-                id: assignment.id,
-                group_id: assignment.group_id,
-                user_id: assignment.user_id
-            };
             available_tickets.push(Assignment {
-                group_assignment,
+                group_assignment_id: assignment.id,
+                group_id: assignment.group_id,
+                user_id: assignment.user_id,
                 tickets_consumed: *tickets_per_user.get(&assignment.user_id).unwrap()
             });
         }
@@ -127,11 +122,11 @@ fn generate_assignments_for_group(group: Uuid, connection: &mut PgConnection) ->
         assignments.push(assignment);
 
         available_tickets.retain(
-            |u| u.group_assignment.user_id != assignment.group_assignment.user_id
+            |u| u.user_id != assignment.user_id
         );
     }
 
-    let assigned_users = assignments.iter().map(|a| a.group_assignment.user_id).collect::<Vec<Uuid>>();
+    let assigned_users = assignments.iter().map(|a| a.user_id).collect::<Vec<Uuid>>();
 
     trace!("Zeroing out tickets for assigned users");
     let result = diesel::update(group_assignments::table)
@@ -172,4 +167,12 @@ struct GroupAssignments
 {
     group: Group,
     assignments: Vec<GroupAssignment>
+}
+
+#[derive(Debug, Serialize, Clone, Copy)]
+pub struct Assignment {
+    pub group_assignment_id: Uuid,
+    pub user_id: Uuid,
+    pub group_id: Uuid,
+    pub tickets_consumed: i32
 }
