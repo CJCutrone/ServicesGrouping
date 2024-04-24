@@ -1,35 +1,31 @@
-use std::env;
-
 use actix_session::Session;
-use actix_web::{get, web::Query, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use actix_web::{get, web::{Data, Query}, HttpResponse, Responder};
+use serde::Deserialize;
 
-use crate::oauth::model::Account;
+use crate::{oauth::model::Account, planning_center, ApplicationConfiguration};
 
 #[get("/oauth/callback")]
 async fn callback(
     session: Session,
-    params: Query<OAuthCallback>
-) -> impl Responder {    
-    let domain = env::var("SERVER_DOMAIN").expect("SERVER_DOMAIN must be set");
-    let center_id = env::var("PLANNING_CENTER_ID").expect("PLANNING_CENTER_ID must be set");
-    let secret = env::var("PLANNING_CENTER_SECRET").expect("PLANNING_CENTER_SECRET must be set");
+    params: Query<OAuthCallback>,
+    configuration: Data<ApplicationConfiguration>
+) -> impl Responder {
+    let configuration = configuration.get_ref();
+    let response = planning_center::oauth::token(configuration, params.code.clone()).await.expect("Unable to verify access token");
 
-    let response = reqwest::Client::new()
-        .post("https://api.planningcenteronline.com/oauth/token")
-        .json(& AuthRequest {
-            grant_type: "authorization_code".to_string(),
-            code: params.code.clone(),
-            client_id: center_id,
-            client_secret: secret,
-            redirect_uri: format!("{}/{}", domain, "oauth/callback").to_string()
-        })
-        .send()
-        .await
-        ;
+    let _ = session.insert("account", response);
+    HttpResponse::Ok().finish()
+}
 
-    let response = response.unwrap();
-    let response: Account = response.json().await.unwrap();
+#[get("/oauth/refresh")]
+async fn refresh_token(
+    session: Session,
+    configuration: Data<ApplicationConfiguration>
+) -> impl Responder {
+    let configuration = configuration.get_ref();
+    let account = session.get::<Account>("account").expect("Unable to retrieve account from session").unwrap();
+
+    let response = planning_center::oauth::refresh_token(configuration, account.refresh_token.clone()).await.expect("Unable to verify access token");
 
     let _ = session.insert("account", response);
     HttpResponse::Ok().finish()
@@ -52,14 +48,4 @@ async fn me(
 #[derive(Deserialize)]
 struct OAuthCallback {
     code: String
-}
-
-
-#[derive(Serialize)]
-pub struct AuthRequest {
-    pub grant_type: String,
-    pub code: String,
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String
 }

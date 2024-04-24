@@ -1,3 +1,4 @@
+use std::env;
 use std::io::{Error, ErrorKind};
 use std::str::FromStr;
 use actix_cors::Cors;
@@ -22,11 +23,11 @@ pub mod api;
 pub mod commands;
 pub mod model;
 pub mod oauth;
+pub mod planning_center;
 pub mod schema;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    
     dotenv().ok();
     pretty_env_logger::init();
     let args = Arguments::parse();
@@ -42,6 +43,16 @@ async fn main() -> std::io::Result<()> {
     match args.command {
         Commands::Api => {
             info!("API command received");
+            let domain = env::var("SERVER_DOMAIN").expect("SERVER_DOMAIN must be set");
+            let planning_center_id = env::var("PLANNING_CENTER_ID").expect("PLANNING_CENTER_ID must be set");
+            let planning_center_secret = env::var("PLANNING_CENTER_SECRET").expect("PLANNING_CENTER_SECRET must be set");
+
+            let configuration = ApplicationConfiguration {
+                domain,
+                planning_center_id,
+                planning_center_secret
+            };
+
             return HttpServer::new(move ||
                 App::new()
                     .wrap(
@@ -68,7 +79,9 @@ async fn main() -> std::io::Result<()> {
                     .service(api::webhooks::groups::membership::membership_created_webhook)
                     .service(oauth::endpoints::callback)
                     .service(oauth::endpoints::me)
+                    .service(oauth::endpoints::refresh_token)
                     .app_data(Data::new(pool.clone()))
+                    .app_data(Data::new(configuration.clone()))
                 )
                 .bind("0.0.0.0:8080")?
                 .run()
@@ -119,4 +132,11 @@ fn generate_dates(
     }
 
     Some(dates)
+}
+
+#[derive(Clone)]
+pub struct ApplicationConfiguration {
+    pub domain: String,
+    pub planning_center_id: String,
+    pub planning_center_secret: String
 }
