@@ -1,6 +1,18 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    accounts (id) {
+        id -> Uuid,
+        #[max_length = 255]
+        planning_center_id -> Varchar,
+        #[max_length = 255]
+        access_token -> Varchar,
+        #[max_length = 255]
+        refresh_token -> Varchar,
+    }
+}
+
+diesel::table! {
     group_assignments (id) {
         id -> Uuid,
         user_id -> Uuid,
@@ -48,6 +60,7 @@ diesel::joinable!(group_assignments -> users (user_id));
 diesel::joinable!(service_dates -> group_assignments (group_assignment_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    accounts,
     group_assignments,
     groups,
     service_dates,
