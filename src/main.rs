@@ -24,24 +24,25 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let pool = get_db_connection();
+    let domain = env::var("SERVER_DOMAIN").expect("SERVER_DOMAIN must be set");
+    let planning_center_id = env::var("PLANNING_CENTER_ID").expect("PLANNING_CENTER_ID must be set");
+    let planning_center_secret = env::var("PLANNING_CENTER_SECRET").expect("PLANNING_CENTER_SECRET must be set");
+    let database_connection = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let configuration = ApplicationConfiguration {
+        domain,
+        planning_center_id,
+        planning_center_secret,
+        encryption_key: "".to_string()
+    };
+
+    let pool = get_db_connection(database_connection.clone());
     if let Err(e) = pool {
         error!("{:?}", e);
         return Err(Error::new(ErrorKind::Other, "Failed to establish connection to database"));
     }
     let pool = pool.unwrap();
     info!("Connection pool established");
-
-    info!("API command received");
-    let domain = env::var("SERVER_DOMAIN").expect("SERVER_DOMAIN must be set");
-    let planning_center_id = env::var("PLANNING_CENTER_ID").expect("PLANNING_CENTER_ID must be set");
-    let planning_center_secret = env::var("PLANNING_CENTER_SECRET").expect("PLANNING_CENTER_SECRET must be set");
-
-    let configuration = ApplicationConfiguration {
-        domain,
-        planning_center_id,
-        planning_center_secret
-    };
 
     return HttpServer::new(move ||
         App::new()
@@ -82,5 +83,6 @@ async fn main() -> std::io::Result<()> {
 pub struct ApplicationConfiguration {
     pub domain: String,
     pub planning_center_id: String,
-    pub planning_center_secret: String
+    pub planning_center_secret: String,
+    pub encryption_key: String
 }

@@ -1,4 +1,3 @@
-use std::env;
 
 use diesel::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PoolError};
@@ -8,11 +7,8 @@ pub mod get;
 pub mod save;
 pub mod ticketing;
 
-pub fn get_db_connection() -> Result<Pool<ConnectionManager<PgConnection>>, PoolError> {
-    trace!("Pulling in .env vars");
-    let url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    trace!("URL for database found");
-    let manager = ConnectionManager::<PgConnection>::new(url);
+pub fn get_db_connection(database_connection: String) -> Result<Pool<ConnectionManager<PgConnection>>, PoolError> {
+    let manager = ConnectionManager::<PgConnection>::new(database_connection);
     trace!("ConnectionManager established");
     let pool = Pool::builder()
         .max_size(1)
