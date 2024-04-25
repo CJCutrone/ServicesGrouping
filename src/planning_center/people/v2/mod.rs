@@ -15,7 +15,6 @@ pub async fn me(token: String) -> Result<PersonResponse, PlanningCenterError> {
         ;
 
     let data = response.text().await.expect("Expected response body to have data");
-    println!("{:?}", data);
 
     let response: Response = serde_json::from_str(&data).expect("Failed to parse response body");
 
