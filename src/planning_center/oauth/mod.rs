@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{oauth::model::Account, ApplicationConfiguration};
+use crate::{oauth::model::AccountTokens, ApplicationConfiguration};
 
 use super::PlanningCenterError;
 
-pub async fn token(config: &ApplicationConfiguration, code: String) -> Result<Account, PlanningCenterError> {
+pub async fn token(config: &ApplicationConfiguration, code: String) -> Result<AccountTokens, PlanningCenterError> {
     let response = reqwest::Client::new()
         .post("https://api.planningcenteronline.com/oauth/token")
         .json(& AuthRequest {
@@ -23,7 +23,7 @@ pub async fn token(config: &ApplicationConfiguration, code: String) -> Result<Ac
 
     match response {
         TokenResponse::Success(success) => {
-            Ok(Account {
+            Ok(AccountTokens {
                 access_token: success.access_token,
                 refresh_token: success.refresh_token
             })
@@ -34,7 +34,7 @@ pub async fn token(config: &ApplicationConfiguration, code: String) -> Result<Ac
     }
 }
 
-pub async fn refresh_token(config: &ApplicationConfiguration, refresh: String) -> Result<Account, PlanningCenterError> {
+pub async fn refresh_token(config: &ApplicationConfiguration, refresh: String) -> Result<AccountTokens, PlanningCenterError> {
     let response = reqwest::Client::new()
         .post("https://api.planningcenteronline.com/oauth/token")
         .json(& RefreshRequest {
@@ -52,7 +52,7 @@ pub async fn refresh_token(config: &ApplicationConfiguration, refresh: String) -
 
     match response {
         TokenResponse::Success(success) => {
-            Ok(Account {
+            Ok(AccountTokens {
                 access_token: success.access_token,
                 refresh_token: success.refresh_token
             })

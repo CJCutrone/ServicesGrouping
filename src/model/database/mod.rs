@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Queryable, Selectable, Insertable, Serialize, Clone, Debug)]
@@ -48,7 +48,7 @@ pub struct ServiceDate {
     pub for_date: NaiveDateTime,
 }
 
-#[derive(Queryable, Selectable, Insertable, Serialize, Clone, Debug)]
+#[derive(Queryable, Selectable, Insertable, Serialize, Deserialize, Clone, Debug)]
 #[diesel(table_name = crate::schema::accounts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Account {

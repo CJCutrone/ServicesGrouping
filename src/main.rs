@@ -14,6 +14,7 @@ use crate::actions::data::get_db_connection;
 
 pub mod actions;
 pub mod api;
+pub mod extractors;
 pub mod model;
 pub mod oauth;
 pub mod planning_center;
@@ -28,12 +29,13 @@ async fn main() -> std::io::Result<()> {
     let planning_center_id = env::var("PLANNING_CENTER_ID").expect("PLANNING_CENTER_ID must be set");
     let planning_center_secret = env::var("PLANNING_CENTER_SECRET").expect("PLANNING_CENTER_SECRET must be set");
     let database_connection = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let encryption_key = env::var("ENCRYPTION_KEY").expect("ENCRYPTION_KEY must be set");
 
     let configuration = ApplicationConfiguration {
         domain,
         planning_center_id,
         planning_center_secret,
-        encryption_key: "".to_string()
+        encryption_key
     };
 
     let pool = get_db_connection(database_connection.clone());
