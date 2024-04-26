@@ -2,11 +2,10 @@ use actix_session::Session;
 use actix_web::{get, web::{Data, Query}, HttpResponse, Responder};
 use diesel::{r2d2::{ConnectionManager, Pool}, PgConnection};
 use log::error;
-use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{actions::{self, data::get::account::GetAccountResult}, model::database::{self, Account}, oauth::model::AccountTokens, planning_center, ApplicationConfiguration};
+use crate::{actions::data::{get::planning_center_access_tokens::{get_decrypted_tokens_for_account, DecryptAccountTokensResult}, save::planning_center_access_tokens::encrypt_and_store_tokens}, model::database::PlanningCenterAccessTokens, oauth::model::AccountTokens, planning_center, ApplicationConfiguration};
 
 #[get("/oauth/callback")]
 async fn callback(
@@ -17,25 +16,30 @@ async fn callback(
 ) -> impl Responder {
     let configuration = configuration.get_ref();
 
-    let response = planning_center::oauth::token(configuration, params.code.clone()).await.expect("Unable to verify access token");
-    let me_response = planning_center::people::v2::me(response.access_token.clone()).await.expect("Unable to retrieve account information");
+    let get_token_response = planning_center::oauth::token(configuration, params.code.clone()).await.expect("Unable to verify access token");
+    let get_user_info_response = planning_center::people::v2::me(get_token_response.access_token.clone()).await.expect("Unable to retrieve account information");
 
-    let user_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, me_response.data.id.as_bytes());
-
-    let crypt = new_magic_crypt!(configuration.encryption_key.clone(), 256);
-    let encrypted_access_token = crypt.encrypt_str_to_base64(response.access_token);
-    let encrypted_refresh_token = crypt.encrypt_str_to_base64(response.refresh_token);
-
-    let mut conn = pool.get_ref().get().expect("Error getting connection");
-
-    let account = Account {
+    let planning_center_id = get_user_info_response.data.id.clone();
+    let user_id = Uuid::new_v5(&Uuid::NAMESPACE_OID, planning_center_id.as_bytes());
+    
+    let planning_center_access_tokens = PlanningCenterAccessTokens {
         id: user_id,
-        planning_center_id: me_response.data.id.clone(),
-        access_token: encrypted_access_token,
-        refresh_token: encrypted_refresh_token
+        planning_center_id: planning_center_id.clone(),
+        access_token: get_token_response.access_token,
+        refresh_token: get_token_response.refresh_token,
+        expires_at: get_token_response.expires_at
     };
 
-    actions::data::save::account::to_database(&mut conn, account.clone());
+    let mut conn = pool.get_ref().get().expect("Error getting connection");
+    let encrypted = encrypt_and_store_tokens(planning_center_access_tokens, configuration, &mut conn);
+
+    let account = PlanningCenterAccessTokens {
+        id: user_id,
+        planning_center_id,
+        access_token: encrypted.access_token,
+        refresh_token: encrypted.refresh_token,
+        expires_at: encrypted.expires_at
+    };
 
     let _ = session.insert("account", account);
     HttpResponse::Ok().finish()
@@ -43,106 +47,58 @@ async fn callback(
 
 #[get("/oauth/refresh")]
 async fn refresh_token(
-    account: Account,
+    account: PlanningCenterAccessTokens,
     pool: Data<Pool<ConnectionManager<PgConnection>>>,
     configuration: Data<ApplicationConfiguration>
 ) -> impl Responder {
     let configuration = configuration.get_ref();
     let mut conn = pool.get_ref().get().expect("Error getting connection");
 
-    //get current access token and refresh token from database
-    let account = match actions::data::get::account::by_id(&mut conn, account.id) {
-        GetAccountResult::UnknownDatabaseError(e) => {
-            error!("{:?}", e);
-            Err(())
+    match get_decrypted_tokens_for_account(account.id, configuration, &mut conn) {
+        DecryptAccountTokensResult::Success(tokens) => {
+            let response = planning_center::oauth::refresh_token(configuration, tokens.refresh_token).await;
+            if let Err(e) = response {
+                error!("{:?}", e.error);
+                return HttpResponse::InternalServerError().finish();
+            }
+        
+            let response = response.unwrap();
+
+            let planning_center_access_tokens = PlanningCenterAccessTokens {
+                id: account.id,
+                planning_center_id: account.planning_center_id,
+                access_token: response.access_token.clone(),
+                refresh_token: response.refresh_token.clone(),
+                expires_at: response.expires_at
+            };
+
+            let tokens = encrypt_and_store_tokens(planning_center_access_tokens, configuration, &mut conn);
+
+            HttpResponse::Ok().json(AccountTokens {
+                access_token: tokens.access_token,
+                refresh_token: tokens.refresh_token,
+                expires_at: tokens.expires_at
+            })
         },
-        GetAccountResult::MoreThanOneFound => {
-            error!("More than one account found for ID: {:?}", account.id);
-            Err(())
-        },
-        GetAccountResult::NotFound => {
-            error!("Account not found with ID: {:?}", account.id);
-            Err(())
-        },
-        GetAccountResult::Success(account) => Ok(account)
-    };
-
-    if account.is_err() {
-        return HttpResponse::InternalServerError().finish();
+        _ => HttpResponse::InternalServerError().finish()
     }
-
-    let account = account.unwrap();
-    let crypt = new_magic_crypt!(configuration.encryption_key.clone(), 256);
-    let decrypted_refresh_token = crypt.decrypt_base64_to_string(account.refresh_token);
-    
-    if let Err(e) = decrypted_refresh_token {
-        error!("{:?}", e);
-        return HttpResponse::InternalServerError().finish();
-    }
-
-    let decrypted_refresh_token = decrypted_refresh_token.unwrap();
-
-    let response = planning_center::oauth::refresh_token(configuration, decrypted_refresh_token).await;
-    
-    if let Err(e) = response {
-        error!("{:?}", e.error);
-        return HttpResponse::InternalServerError().finish();
-    }
-
-    let response = response.unwrap();
-
-    let crypt = new_magic_crypt!(configuration.encryption_key.clone(), 256);
-    let encrypted_access_token = crypt.encrypt_str_to_base64(response.access_token);
-    let encrypted_refresh_token = crypt.encrypt_str_to_base64(response.refresh_token);
-    actions::data::save::account::to_database(&mut conn, database::Account {
-        id: account.id,
-        planning_center_id: account.planning_center_id,
-        access_token: encrypted_access_token,
-        refresh_token: encrypted_refresh_token
-    });
-    
-    HttpResponse::Ok().finish()
 }
 
 //TODO: should either be removed after testing is done, or should be modified to not return auth/refresh tokens
 #[get("/oauth/me")]
 async fn me(
-    account: Account,
+    account: PlanningCenterAccessTokens,
     pool: Data<Pool<ConnectionManager<PgConnection>>>,
     configuration: Data<ApplicationConfiguration>
 ) -> impl Responder {
+    let configuration = configuration.get_ref();
     let mut conn = pool.get_ref().get().expect("Error getting connection");
 
-    match actions::data::get::account::by_id(&mut conn, account.id) {
-        GetAccountResult::UnknownDatabaseError(e) => {
-            error!("{:?}", e);
-            HttpResponse::InternalServerError().finish()
+    match get_decrypted_tokens_for_account(account.id, configuration, &mut conn) {
+        DecryptAccountTokensResult::Success(tokens) => {
+            HttpResponse::Ok().json(tokens)
         },
-        GetAccountResult::MoreThanOneFound => {
-            error!("More than one account found for ID: {:?}", account.id);
-            HttpResponse::InternalServerError().finish()
-        },
-        GetAccountResult::NotFound => {
-            error!("Account not found with ID: {:?}", account.id);
-            HttpResponse::Unauthorized().finish()
-        },
-        GetAccountResult::Success(account) => {
-            let crypt = new_magic_crypt!(configuration.get_ref().encryption_key.clone(), 256);
-            let decrypted_access_token = crypt.decrypt_base64_to_string(account.access_token);
-            let decrypted_refresh_token = crypt.decrypt_base64_to_string(account.refresh_token);
-
-            if decrypted_access_token.is_err() || decrypted_refresh_token.is_err() {
-                return HttpResponse::InternalServerError().finish();
-            }
-
-            let decrypted_access_token = decrypted_access_token.unwrap();
-            let decrypted_refresh_token = decrypted_refresh_token.unwrap();
-
-            HttpResponse::Ok().json(AccountTokens {
-                access_token: decrypted_access_token,
-                refresh_token: decrypted_refresh_token
-            })
-        }
+        _ => HttpResponse::InternalServerError().finish()
     }
 }
 

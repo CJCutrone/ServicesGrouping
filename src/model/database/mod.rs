@@ -49,11 +49,12 @@ pub struct ServiceDate {
 }
 
 #[derive(Queryable, Selectable, Insertable, Serialize, Deserialize, Clone, Debug)]
-#[diesel(table_name = crate::schema::accounts)]
+#[diesel(table_name = crate::schema::planning_center_access_tokens)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Account {
+pub struct PlanningCenterAccessTokens {
     pub id: Uuid,
     pub planning_center_id: String,
     pub access_token: String,
-    pub refresh_token: String
+    pub refresh_token: String,
+    pub expires_at: i64
 }

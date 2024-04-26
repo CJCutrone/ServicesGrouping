@@ -23,9 +23,11 @@ pub async fn token(config: &ApplicationConfiguration, code: String) -> Result<Ac
 
     match response {
         TokenResponse::Success(success) => {
+            let now = chrono::Utc::now().timestamp();
             Ok(AccountTokens {
                 access_token: success.access_token,
-                refresh_token: success.refresh_token
+                refresh_token: success.refresh_token,
+                expires_at: now + success.expires_in
             })
         },
         TokenResponse::Error(error) => {
@@ -50,11 +52,14 @@ pub async fn refresh_token(config: &ApplicationConfiguration, refresh: String) -
 
     let response: TokenResponse = response.json().await.unwrap();
 
+    //get current time in seconds
     match response {
         TokenResponse::Success(success) => {
+            let now = chrono::Utc::now().timestamp();
             Ok(AccountTokens {
                 access_token: success.access_token,
-                refresh_token: success.refresh_token
+                refresh_token: success.refresh_token,
+                expires_at: now + success.expires_in
             })
         },
         TokenResponse::Error(error) => {
