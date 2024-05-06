@@ -5,7 +5,6 @@ use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 use uuid::Uuid;
 
 use crate::model::database::PlanningCenterAccessTokens;
-use crate::oauth::model::AccountTokens;
 use crate::schema::planning_center_access_tokens::dsl::planning_center_access_tokens;
 use crate::schema::planning_center_access_tokens::id;
 use crate::ApplicationConfiguration;
@@ -68,7 +67,9 @@ pub fn get_decrypted_tokens_for_account(
             let decrypted_access_token = decrypted_access_token.unwrap();
             let decrypted_refresh_token = decrypted_refresh_token.unwrap();
             
-            DecryptAccountTokensResult::Success(AccountTokens {
+            DecryptAccountTokensResult::Success(PlanningCenterAccessTokens {
+                id: account.id,
+                planning_center_id: account.planning_center_id,
                 access_token: decrypted_access_token,
                 refresh_token: decrypted_refresh_token,
                 expires_at: account.expires_at
@@ -90,5 +91,5 @@ pub enum DecryptAccountTokensResult {
     MoreThanOneAccountFound,
     NoAccountFound,
     UnableToDecryptTokens,
-    Success(AccountTokens)
+    Success(PlanningCenterAccessTokens)
 }

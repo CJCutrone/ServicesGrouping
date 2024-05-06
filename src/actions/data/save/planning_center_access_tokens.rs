@@ -25,17 +25,17 @@ pub fn to_database(conn: &mut PgConnection, data: PlanningCenterAccessTokens) {
 }
 
 pub fn encrypt_and_store_tokens(
-    tokens: PlanningCenterAccessTokens,
+    tokens: &PlanningCenterAccessTokens,
     configuration: &ApplicationConfiguration,
     conn: &mut PgConnection,
 ) -> AccountTokens
 {
     let crypt = new_magic_crypt!(configuration.encryption_key.clone(), 256);
-    let encrypted_access_token = crypt.encrypt_str_to_base64(tokens.access_token);
-    let encrypted_refresh_token = crypt.encrypt_str_to_base64(tokens.refresh_token);
+    let encrypted_access_token = crypt.encrypt_str_to_base64(tokens.access_token.clone());
+    let encrypted_refresh_token = crypt.encrypt_str_to_base64(tokens.refresh_token.clone());
     to_database(conn, database::PlanningCenterAccessTokens {
         id: tokens.id,
-        planning_center_id: tokens.planning_center_id,
+        planning_center_id: tokens.planning_center_id.clone(),
         access_token: encrypted_access_token.clone(),
         refresh_token: encrypted_refresh_token.clone(),
         expires_at: tokens.expires_at

@@ -31,7 +31,7 @@ async fn callback(
     };
 
     let mut conn = pool.get_ref().get().expect("Error getting connection");
-    let encrypted = encrypt_and_store_tokens(planning_center_access_tokens, configuration, &mut conn);
+    let encrypted = encrypt_and_store_tokens(&planning_center_access_tokens, configuration, &mut conn);
 
     let account = PlanningCenterAccessTokens {
         id: user_id,
@@ -72,7 +72,7 @@ async fn refresh_token(
                 expires_at: response.expires_at
             };
 
-            let tokens = encrypt_and_store_tokens(planning_center_access_tokens, configuration, &mut conn);
+            let tokens = encrypt_and_store_tokens(&planning_center_access_tokens, configuration, &mut conn);
 
             HttpResponse::Ok().json(AccountTokens {
                 access_token: tokens.access_token,

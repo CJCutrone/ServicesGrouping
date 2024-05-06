@@ -4,8 +4,6 @@ use serde::Deserialize;
 use crate::planning_center::{Meta, PlanningCenterError};
 
 pub async fn me(token: String) -> Result<PersonResponse, PlanningCenterError> {
-    println!("{:?}", token);
-
     let response = reqwest::Client::new()
         .get("https://api.planningcenteronline.com/people/v2/me")
         .bearer_auth(token)
@@ -16,6 +14,25 @@ pub async fn me(token: String) -> Result<PersonResponse, PlanningCenterError> {
 
     let data = response.text().await.expect("Expected response body to have data");
 
+    let response: Response = serde_json::from_str(&data).expect("Failed to parse response body");
+
+    match response {
+        Response::Success(success) => Ok(*success),
+        Response::Error(error) => Err(error)
+    }
+}
+
+pub async fn people(planning_center_id: String, token: String) -> Result<PersonResponse, PlanningCenterError> {
+    let endpoint = format!("https://api.planningcenteronline.com/people/v2/people/{}", planning_center_id);
+    let response = reqwest::Client::new()
+        .get(endpoint)
+        .bearer_auth(token)
+        .send()
+        .await
+        .expect("Unable to send request to Planning Center API (endpoint /people/v2/people/{{PERSON_ID}})")
+        ;
+
+    let data = response.text().await.expect("Expected response body to have data");
     let response: Response = serde_json::from_str(&data).expect("Failed to parse response body");
 
     match response {
@@ -44,7 +61,7 @@ pub struct Person
 {
     pub id: String,
     #[serde(rename = "type")]
-    pub me_type: String,
+    pub person_type: String,
     pub attributes: Attributes,
     pub relationships: Relationships,
     pub links: Links
