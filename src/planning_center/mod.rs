@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod oauth;
 pub mod people;
+pub mod group;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PlanningCenterError {
