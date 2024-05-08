@@ -93,7 +93,7 @@ pub struct Attributes
     pub name: String,
     pub nickname: Option<String>,
     pub passed_background_check: bool,
-    pub people_permissions: String,
+    pub people_permissions: Option<String>,
     pub remote_id: Option<String>,
     pub school_type: Option<String>,
     pub site_administrator: bool,

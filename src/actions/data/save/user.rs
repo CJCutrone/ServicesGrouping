@@ -14,8 +14,4 @@ pub fn to_database(conn: &mut PgConnection, data: &Vec<User>) {
         .get_results(conn)
         .expect("Error inserting users")
         ;
-
-    for user in result {
-        println!("{:?}", user);
-    }
 }

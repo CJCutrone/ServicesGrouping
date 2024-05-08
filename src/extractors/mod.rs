@@ -12,7 +12,7 @@ impl actix_web::FromRequest for PlanningCenterAccessTokens
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         let session = req.get_session();
-        let account = session.get::<PlanningCenterAccessTokens>("access_tokens");
+        let account = session.get::<PlanningCenterAccessTokens>("account");
 
         Box::pin(async move {
             if let Ok(Some(account)) = account {
