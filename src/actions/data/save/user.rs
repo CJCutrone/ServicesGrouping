@@ -6,7 +6,7 @@ use crate::schema::users;
 use crate::schema::users::{id, planning_center_id};
 
 pub fn to_database(conn: &mut PgConnection, data: &Vec<User>) {
-    let result: Vec<User> = insert_into(users::table)
+    let _: Vec<User> = insert_into(users::table)
         .values(data)
         .on_conflict(id)
         .do_update()
