@@ -25,3 +25,31 @@ async fn generate_assignments(
 
     HttpResponse::Ok().json(generate_assignments)
 }
+
+#[post("/api/schedule/configure")]
+async fn configure_scheduler(
+    db_pool: Data<Pool<ConnectionManager<PgConnection>>>
+) -> impl Responder {
+
+    //get database,
+    //store the configuration in the database as json blob
+
+    HttpResponse::Ok()
+}
+
+#[post("/api/schedule/{team}")]
+async fn schedule (
+    path: web::Path<String>,
+    db_pool: Data<Pool<ConnectionManager<PgConnection>>>
+) -> impl Responder {
+    let team_id = path.into_inner();
+    let db_pool = db_pool.get_ref();
+        
+    //get team positions for team with id
+    //for each position, get people assigned
+        //for each person, make sure they exist in our DB (if not, add them)
+    //for each position assign people based on ticket data
+    
+
+    HttpResponse::Ok()
+}
