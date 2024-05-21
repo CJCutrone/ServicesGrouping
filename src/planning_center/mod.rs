@@ -18,6 +18,8 @@ pub struct Meta
     pub count: Option<i32>,
     pub can_include: Vec<String>,
     pub can_order_by: Option<Vec<String>>,
+    pub can_query_by: Option<Vec<String>>,
+    pub can_filter: Option<Vec<String>>,
     pub parent: Data
 }
 

@@ -2,7 +2,9 @@ use serde::Deserialize;
 
 use crate::planning_center::{Meta, PlanningCenterError, Type, TypeVec};
 
-pub async fn positions(
+pub mod team_positions;
+
+pub async fn team_positions(
     team_id: String,
     token: String
 ) -> Result<TeamPositionsResponse, PlanningCenterError> {

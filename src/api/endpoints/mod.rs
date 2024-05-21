@@ -30,7 +30,7 @@ async fn generate_assignments(
 async fn configure_scheduler(
     db_pool: Data<Pool<ConnectionManager<PgConnection>>>
 ) -> impl Responder {
-
+    let _db_pool = db_pool.get_ref();
     //get database,
     //store the configuration in the database as json blob
 
@@ -42,8 +42,8 @@ async fn schedule (
     path: web::Path<String>,
     db_pool: Data<Pool<ConnectionManager<PgConnection>>>
 ) -> impl Responder {
-    let team_id = path.into_inner();
-    let db_pool = db_pool.get_ref();
+    let _team_id = path.into_inner();
+    let _db_pool = db_pool.get_ref();
         
     //get team positions for team with id
     //for each position, get people assigned
