@@ -5,8 +5,8 @@ use crate::planning_center::{Meta, PlanningCenterError, Type, TypeVec};
 pub mod team_positions;
 
 pub async fn team_positions(
-    team_id: String,
-    token: String
+    team_id: &String,
+    token: &String
 ) -> Result<TeamPositionsResponse, PlanningCenterError> {
     let endpoint = format!("https://api.planningcenteronline.com/services/v2/teams/{team_id}/team_positions");
     let response = reqwest::Client::new()
@@ -19,6 +19,8 @@ pub async fn team_positions(
 
     let data = response.text().await.expect("Expected response body to have data");
 
+    println!("{:?}", data);
+
     let response: Response = serde_json::from_str(&data).expect("Failed to parse response body");
 
     match response {
@@ -28,6 +30,7 @@ pub async fn team_positions(
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 enum Response
 {
     Success(Box<TeamPositionsResponse>),

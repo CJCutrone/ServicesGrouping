@@ -2,10 +2,10 @@ use serde::Deserialize;
 
 use crate::planning_center::{Meta, PlanningCenterError, Type, TypeVec};
 
-pub async fn team_positions(
-    team_id: String,
-    team_position_id: String,
-    token: String
+pub async fn person_team_position_assignments(
+    team_id: &String,
+    team_position_id: &String,
+    token: &String
 ) -> Result<TeamPositionsAssignmentResponse, PlanningCenterError> {
     let endpoint = format!("https://api.planningcenteronline.com/services/v2/teams/{team_id}/team_positions/{team_position_id}/person_team_position_assignments");
     let response = reqwest::Client::new()
@@ -27,6 +27,7 @@ pub async fn team_positions(
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 enum Response
 {
     Success(Box<TeamPositionsAssignmentResponse>),

@@ -28,6 +28,7 @@ pub async fn teams(
 }
 
 #[derive(Deserialize)]
+#[serde(untagged)]
 enum Response
 {
     Success(Box<TeamResponse>),

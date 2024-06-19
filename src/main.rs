@@ -66,6 +66,7 @@ async fn main() -> std::io::Result<()> {
                     .build()
             )
             .service(api::endpoints::generate_assignments)
+            .service(api::endpoints::schedule)
             .service(api::webhooks::groups::group_created_webhook)
             .service(api::webhooks::groups::group_updated_webhook)
             .service(api::webhooks::groups::group_deleted_webhook)
